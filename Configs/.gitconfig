@@ -1,0 +1,13 @@
+[core]
+	autocrlf = true
+[user]
+	name = Knight
+	email = knight.chan319@gmail.com
+[alias]
+	co = checkout
+	st = status
+	br = branch
+	last = log -1 HEAD
+	visual = !gitk
+	uncommit = reset HEAD^
+    cv = describe --abbrev=0
