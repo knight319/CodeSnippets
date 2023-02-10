@@ -9,6 +9,7 @@ Function CopyOrMoveBasedOnDate($src, $dest, $move=$false){
     # op2: Get-ChildItem and Move-Item. Move items to CreatedDate related folder, like 2023-02
     $cnt = 0;
     $items = Get-ChildItem $src -Recurse -File
+    Write-Host "Total" + $items.Count + " files."
     $items | % {
         $dir = Join-Path $dest $_.CreationTime.ToString("yyyy-MM");
         If (!(Test-Path $dir)){ mkdir $dir };
