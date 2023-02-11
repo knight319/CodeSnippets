@@ -48,7 +48,7 @@ function CopyItemWithSpeed([string]$source, [string]$destination, [bool]$move = 
           $percentComplete = [int](($bytesCopied / $fileSize) * 100)
           Write-Progress -Id 99999 -Activity "Copying $source to $destination" -PercentComplete $percentComplete -Status "$bytesCopiedHumanReadable of $fileSizeHumanReadable bytes copied"
       }
-      if ($move) { Remove-Item $source }
+      if ($move) { Remove-Item $source -Force }
   }
   finally {
       $copy.Close()
