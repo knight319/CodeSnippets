@@ -75,8 +75,9 @@ Function CopyOrMoveBasedOnDate($src, $dest, $move=$false){
         $pct = ($cnt/($items.Count))*100
         Write-Progress -Id 1001 -Activity "Copy to $dest" -Status "Processing $cnt files. Percent complete" -PercentComplete $pct
         If ($move) { 
-            # Move-Item $_.FullName $destfilepath -Force;
-            CopyItemWithSpeed $_.FullName $destfilepath $true
+            # for move, use move-item
+            Move-Item $_.FullName $destfilepath -Force;
+            # CopyItemWithSpeed $_.FullName $destfilepath $true
         }
         ELSE {
             # Copy-Item $_.FullName $destfilepath -Force; 
