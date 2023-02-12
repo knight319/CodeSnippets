@@ -115,16 +115,20 @@ Function DetectDcimFolderInUseDisk($DriveLetter){
 
 $src = DetectDcimFolderInUseDisk $DriveLetter
 
-$dest = "$env:userprofile\Pictures\Back2Nas\FujiXS10\"
-$destDate = Join-Path $dest (Get-Date).ToString("yyyy-MM")
-If (!(Test-Path $destDate)){ Start $dest }
-ELSE { Start $destDate; }
-CopyOrMoveBasedOnDate $src $dest $false
+if ($src) {
+    $dest = "$env:userprofile\Pictures\Back2Nas\FujiXS10\"
+    $destDate = Join-Path $dest (Get-Date).ToString("yyyy-MM")
+    If (!(Test-Path $destDate)){ Start $dest }
+    ELSE { Start $destDate; }
+    CopyOrMoveBasedOnDate $src $dest $false
 
-$dest = "Y:\Photos\PhotoLibrary\FujiXS10\"
-CopyOrMoveBasedOnDate $src $dest $true
-#Start (Join-Path $dest (Get-Date).ToString("yyyy-MM"))
+    $dest = "Y:\Photos\PhotoLibrary\FujiXS10\"
+    CopyOrMoveBasedOnDate $src $dest $true
+    #Start (Join-Path $dest (Get-Date).ToString("yyyy-MM"))
 
-sync -r -e $src[0]
+    sync -r -e $src[0]
+} else {
+    Write-Log "No usb drive with DCIM folder, please insert one."
+}
 
 Pause
