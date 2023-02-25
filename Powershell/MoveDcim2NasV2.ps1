@@ -35,7 +35,7 @@ function CopyItemWithSpeed([string]$source, [string]$destination, [bool]$move = 
       $copy = [System.IO.File]::OpenRead($source)
       $dest = [System.IO.File]::Create($destination)
 
-      $buffer = New-Object byte[] 1048576
+      $buffer = New-Object byte[] 134217728 # 4M = 4194304, 16M = 16777216, 32M = 33554432， 64M = 67108864， 128M = 134217728
       $fileSizeHumanReadable = Convert-ByteSize $fileSize
       while ($bytesCopied -lt $fileSize)
       {
@@ -48,6 +48,7 @@ function CopyItemWithSpeed([string]$source, [string]$destination, [bool]$move = 
           $percentComplete = [int](($bytesCopied / $fileSize) * 100)
           Write-Progress -Id 99999 -Activity "Copying $source to $destination" -PercentComplete $percentComplete -Status "$bytesCopiedHumanReadable of $fileSizeHumanReadable bytes copied"
       }
+      Write-Progress -Id 99999 -Activity "Copying $source to $destination" -PercentComplete 100 -Completed
       if ($move) { Remove-Item $source -Force }
   }
   finally {
@@ -57,6 +58,7 @@ function CopyItemWithSpeed([string]$source, [string]$destination, [bool]$move = 
 }
 
 Function CopyOrMoveBasedOnDate($src, $dest, $move=$false){
+    $StartDate = Get-Date
     # op1: use robocopy to copy, it is faster but cannot move file to it's related folder based on CreatedDate, like 2023-02
     # copy and move
     #robocopy $src $dest /S /xo /MT:5
@@ -84,10 +86,12 @@ Function CopyOrMoveBasedOnDate($src, $dest, $move=$false){
             CopyItemWithSpeed $_.FullName $destfilepath $false
         }
     }
+
+    $EndDate = Get-Date
     
     # Delete empty folders in source.
     If ($move) { robocopy $src $src /s /move; }
-    Write-Log ("Done " + $cnt + " files.")
+    Write-Log ("Done " + $cnt + " files. Exec Time: " + ($EndDate - $StartDate).ToString())
 }
 
 Function DetectDcimFolderInUseDisk($DriveLetter){
@@ -124,7 +128,7 @@ if ($src) {
 
     $dest = "Y:\Photos\PhotoLibrary\FujiXS10\"
     CopyOrMoveBasedOnDate $src $dest $true
-    #Start (Join-Path $dest (Get-Date).ToString("yyyy-MM"))
+    Start (Join-Path $dest (Get-Date).ToString("yyyy-MM"))
 
     sync -r -e $src[0]
 } else {
