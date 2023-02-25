@@ -94,6 +94,43 @@ Function CopyOrMoveBasedOnDate($src, $dest, $move=$false){
     Write-Log ("Done " + $cnt + " files. Exec Time: " + ($EndDate - $StartDate).ToString())
 }
 
+# use robocopy to move item to a dest first and use move to adjust the folder.
+Function CopyOrMoveBasedOnDateV2($src, $dest, $move=$false){
+    $StartDate = Get-Date
+    # step 1: use robocopy to copy, it is faster but cannot move file to it's related folder based on CreatedDate, like 2023-02
+    # copy or move
+    $dest_tmp = Join-Path $dest ((Get-Date).ToString("yyyy-MM-dd") + "-tmp_CopyOrMoveBasedOnDateV2");
+    If ($move) { 
+        robocopy $src $dest_tmp /S /xo /MT:4 /MOVE
+    }
+    ELSE {
+        robocopy $src $dest_tmp /S /xo /MT:5
+    }
+    
+    $src = $dest_tmp
+
+    # step 2: Get-ChildItem and Move-Item. Move items to CreatedDate related folder, like 2023-02
+    $cnt = 0;
+    $items = Get-ChildItem $src -Recurse -File
+    Write-Log ("Step2: Move to date folder. Total " + $items.Count + " files.")
+    $items | % {
+        $dir = Join-Path $dest $_.CreationTime.ToString("yyyy-MM");
+        If (!(Test-Path $dir)){ mkdir $dir };
+        $destfilepath = Join-Path $dir $_.Name;
+        
+        $cnt += 1;
+        $pct = ($cnt/($items.Count))*100
+        Write-Progress -Id 1001 -Activity "Move to $dest" -Status "Processing $cnt files. Percent complete" -PercentComplete $pct
+        Move-Item $_.FullName $destfilepath -Force;
+    }
+
+    $EndDate = Get-Date
+    
+    # Delete empty folders in source.
+    robocopy $src $src /s /move
+    Write-Log ("Done " + $cnt + " files. Exec Time: " + ($EndDate - $StartDate).ToString())
+}
+
 Function DetectDcimFolderInUseDisk($DriveLetter){
     if ($DriveLetter) {
         $tmp_p = Join-Path $disk.DriveLetter "DCIM"
@@ -124,11 +161,11 @@ if ($src) {
     $destDate = Join-Path $dest (Get-Date).ToString("yyyy-MM")
     If (!(Test-Path $destDate)){ Start $dest }
     ELSE { Start $destDate; }
-    CopyOrMoveBasedOnDate $src $dest $false
+    CopyOrMoveBasedOnDateV2 $src $dest $false
 
     $dest = "Y:\Photos\PhotoLibrary\FujiXS10\"
-    CopyOrMoveBasedOnDate $src $dest $true
-    Start (Join-Path $dest (Get-Date).ToString("yyyy-MM"))
+    CopyOrMoveBasedOnDateV2 $src $dest $true
+    # Start (Join-Path $dest (Get-Date).ToString("yyyy-MM"))
 
     sync -r -e $src[0]
 } else {
