@@ -68,7 +68,7 @@ Function CopyOrMoveBasedOnDate($src, $dest, $move=$false){
     $cnt = 0;
     $items = Get-ChildItem $src -Recurse -File
     Write-Log ("Total " + $items.Count + " files.")
-    $items | % {
+    $items | ForEach-Object {
         $dir = Join-Path $dest $_.CreationTime.ToString("yyyy-MM");
         If (!(Test-Path $dir)){ mkdir $dir };
         $destfilepath = Join-Path $dir $_.Name;
@@ -90,7 +90,7 @@ Function CopyOrMoveBasedOnDate($src, $dest, $move=$false){
     $EndDate = Get-Date
     
     # Delete empty folders in source.
-    If ($move) { robocopy $src $src /s /move; }
+    If ($move) { robocopy $src $src /s /move /nfl /ndl /njs }
     Write-Log ("Done " + $cnt + " files. Exec Time: " + ($EndDate - $StartDate).ToString())
 }
 
@@ -99,12 +99,12 @@ Function CopyOrMoveBasedOnDateV2($src, $dest, $move=$false){
     $StartDate = Get-Date
     # step 1: use robocopy to copy, it is faster but cannot move file to it's related folder based on CreatedDate, like 2023-02
     # copy or move
-    $dest_tmp = Join-Path $dest ((Get-Date).ToString("yyyy-MM-dd") + "-tmp_CopyOrMoveBasedOnDateV2");
+    $dest_tmp = Join-Path $dest ("CopyOrMoveBasedOnDateV2_TMP_" + (Get-Date).ToString("yyyy-MM-dd-HH-mm-ss"))
     If ($move) { 
-        robocopy $src $dest_tmp /S /xo /MT:4 /MOVE
+        robocopy $src $dest_tmp /S /xo /MT:8 /MOVE /nfl /ndl
     }
     ELSE {
-        robocopy $src $dest_tmp /S /xo /MT:5
+        robocopy $src $dest_tmp /S /xo /MT:8 /nfl /ndl
     }
     
     $src = $dest_tmp
@@ -113,7 +113,7 @@ Function CopyOrMoveBasedOnDateV2($src, $dest, $move=$false){
     $cnt = 0;
     $items = Get-ChildItem $src -Recurse -File
     Write-Log ("Step2: Move to date folder. Total " + $items.Count + " files.")
-    $items | % {
+    $items | ForEach-Object {
         $dir = Join-Path $dest $_.CreationTime.ToString("yyyy-MM");
         If (!(Test-Path $dir)){ mkdir $dir };
         $destfilepath = Join-Path $dir $_.Name;
@@ -127,7 +127,7 @@ Function CopyOrMoveBasedOnDateV2($src, $dest, $move=$false){
     $EndDate = Get-Date
     
     # Delete empty folders in source.
-    robocopy $src $src /s /move
+    robocopy $src $src /s /move /nfl /ndl /njs
     Write-Log ("Done " + $cnt + " files. Exec Time: " + ($EndDate - $StartDate).ToString())
 }
 
@@ -156,18 +156,25 @@ Function DetectDcimFolderInUseDisk($DriveLetter){
 
 $src = DetectDcimFolderInUseDisk $DriveLetter
 
+# below is custmized logic for myself. 
 if ($src) {
+    # Copy files to a tmp folder
+    $srcTmp = Join-Path "D:\KC" ("MoveDcim2NasV2_TMP_" + (Get-Date).ToString("yyyy-MM-dd-HH-mm-ss"))
+    CopyOrMoveBasedOnDateV2 $src $srcTmp $true
+    sync -r -e $src[0]
+    Start-Process $srcTmp
+    $src = $srcTmp
+
+    # Copy file from tmp folder to dest1 and dest2
     $dest = "$env:userprofile\Pictures\Back2Nas\FujiXS10\"
     $destDate = Join-Path $dest (Get-Date).ToString("yyyy-MM")
-    If (!(Test-Path $destDate)){ Start $dest }
-    ELSE { Start $destDate; }
+    If (!(Test-Path $destDate)){ Start-Process $dest }
+    ELSE { Start-Process $destDate; }
     CopyOrMoveBasedOnDateV2 $src $dest $false
 
     $dest = "Y:\Photos\PhotoLibrary\FujiXS10\"
     CopyOrMoveBasedOnDateV2 $src $dest $true
     # Start (Join-Path $dest (Get-Date).ToString("yyyy-MM"))
-
-    sync -r -e $src[0]
 } else {
     Write-Log "No usb drive with DCIM folder, please insert one."
 }
