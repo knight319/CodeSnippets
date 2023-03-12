@@ -1,15 +1,20 @@
 ﻿[CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$true, ParameterSetName='Dates')]
+    [Parameter(Mandatory=$true, ParameterSetName = 'Yesterday')]
     [string]$Folder,
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$true, ParameterSetName = 'Dates')]
     [string]$StartDate,
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$true, ParameterSetName='Dates')]
     [string]$EndDate,
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$true, ParameterSetName='Yesterday')]
+    [Parameter(Mandatory=$true, ParameterSetName='Dates')]
     [string]$OutputFolder,
-    [Parameter(Mandatory=$false)]
-    [string]$LogPath = "$env:userprofile\Merge-Videos.log"
+    [Parameter(Mandatory=$false, ParameterSetName='Yesterday')]
+    [Parameter(Mandatory=$false, ParameterSetName='Dates')]
+    [string]$LogPath = "$env:userprofile\Merge-Videos.log",
+    [Parameter(Mandatory=$false, ParameterSetName='Yesterday')]
+    [switch]$Yesterday
 )
 
 Function Write-Log($str) {
@@ -105,10 +110,20 @@ function Merge-AllVideos {
     $Directories | % { Merge-Videos $_ $Folder; rm -r $_ }
 }
 
+
+
 # main logic start
-$format = "yyyy-MM-dd"
-$sDate = [DateTime]::ParseExact($StartDate, $format, $null)
-$eDate = [DateTime]::ParseExact($EndDate, $format, $null)
+
+
+if ($Yesterday) {
+    $sDate = (Get-Date).Date.AddDays(-1)
+    $eDate = $sDate
+} else {
+    $format = "yyyy-MM-dd"
+    $sDate = [DateTime]::ParseExact($StartDate, $format, $null)
+    $eDate = [DateTime]::ParseExact($EndDate, $format, $null)
+}
+
 while ($sDate -le $eDate) {
     $prefix = $sDate.ToString("yyyyMMdd")
     Write-Log ("Get-SubFoldersByPrefix start. Prefix:" + $prefix + " Folder:" + $Folder)
