@@ -162,7 +162,7 @@ if ($src) {
     $srcTmp = Join-Path "D:\KC" ("MoveDcim2NasV2_TMP_" + (Get-Date).ToString("yyyy-MM-dd-HH-mm-ss"))
     CopyOrMoveBasedOnDateV2 $src $srcTmp $true
     sync -r -e $src[0]
-    Start-Process $srcTmp
+    # Start-Process $srcTmp
     $src = $srcTmp
 
     # Copy file from tmp folder to dest1 and dest2
