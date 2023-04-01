@@ -14,7 +14,10 @@ param(
     [Parameter(Mandatory=$false, ParameterSetName='Dates')]
     [string]$LogPath = "$env:userprofile\MergeXiaomiCameraVideos.log",
     [Parameter(Mandatory=$false, ParameterSetName='Yesterday')]
-    [switch]$Yesterday
+    [switch]$Yesterday,
+    [Parameter(Mandatory=$false, ParameterSetName='Dates')]
+    [Parameter(Mandatory=$false, ParameterSetName = 'Yesterday')]
+    [switch]$Compression
 )
 
 Function Write-Log($str) {

@@ -14,7 +14,10 @@ param(
     [Parameter(Mandatory=$false, ParameterSetName='Dates')]
     [string]$LogPath = "$env:userprofile\Merge-Videos.log",
     [Parameter(Mandatory=$false, ParameterSetName='Yesterday')]
-    [switch]$Yesterday
+    [switch]$Yesterday,
+    [Parameter(Mandatory=$false, ParameterSetName='Dates')]
+    [Parameter(Mandatory=$false, ParameterSetName = 'Yesterday')]
+    [switch]$Compression
 )
 
 Function Write-Log($str) {
@@ -82,12 +85,18 @@ function Merge-VideosByFileNames {
         return
     }
 
-    if ($OutputFileName -eq "") { $OutputFileName = "MergedVideo_" + (Get-DateTimeFileName) + ".mkv"; }
         
     # Generate input file list for FFmpeg
     $tmpFilePath = Join-Path $pwd ("MergedVideo_Filelist_" + (Get-DateTimeFileName) + ".txt")
     echo "" > $tmpFilePath;foreach ($i in $InputFiles) {echo "file '$i'" >> $tmpFilePath}; Set-Content -Path $tmpFilePath -Encoding Default -Value (Get-Content -Path $tmpFilePath)
-    ffmpeg -f concat -safe 0 -i $tmpFilePath -c copy $OutputFileName
+    if ($Compression){
+        if ($OutputFileName -eq "") { $OutputFileName = "MergedVideo_" + (Get-DateTimeFileName) + "_compressed.mkv"; }
+        # takes a long time and consume a lot CPUs.
+        ffmpeg -f concat -safe 0 -i $tmpFilePath -crf 28 $OutputFileName
+    } else{
+        if ($OutputFileName -eq "") { $OutputFileName = "MergedVideo_" + (Get-DateTimeFileName) + ".mkv"; }
+        ffmpeg -f concat -safe 0 -i $tmpFilePath -c copy $OutputFileName
+    }
     rm $tmpFilePath
 }
 
