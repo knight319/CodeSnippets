@@ -5,7 +5,8 @@ param (
   [string]$DriveLetter = "",
   [string]$LogPath = "$env:userprofile\MoveDcim2NasV2.log",
   [ValidateSet('Month', 'Day')]
-  [string]$DestMode = "Month"
+  [string]$DestMode = "Month",
+  [string]$DestFolderNameSuffix = ""
 )
 
 Function Write-Log($str) {
@@ -14,12 +15,13 @@ Function Write-Log($str) {
     $logstr >> $LogPath
 }
 
-Function GetDestFolderName([datetime]$DateTime) {
+Function GetDestFolderName([datetime]$DateTime, [string]$Suffix = "") {
     if ($DestMode -eq 'Month') {
-        return $DateTime.ToString("yyyy-MM");
+        return ($DateTime.ToString("yyyy-MM")) + $Suffix;
+    } elseif ($DestMode -eq 'Day') {
+        # Day
+        return ($DateTime.ToString("yyyy-MM-dd")) + $Suffix;
     }
-    # Day
-    return $DateTime.ToString("yyyy-MM-dd");
 }
 
 function Convert-ByteSize {
@@ -79,7 +81,7 @@ Function CopyOrMoveBasedOnDate($src, $dest, $move=$false){
     $items = Get-ChildItem $src -Recurse -File
     Write-Log ("Total " + $items.Count + " files.")
     $items | ForEach-Object {
-        $dir = Join-Path $dest (GetDestFolderName($_.CreationTime));
+        $dir = Join-Path $dest (GetDestFolderName $_.CreationTime $DestFolderNameSuffix);
         If (!(Test-Path $dir)){ mkdir $dir };
         $destfilepath = Join-Path $dir $_.Name;
         
@@ -124,7 +126,7 @@ Function CopyOrMoveBasedOnDateV2($src, $dest, $move=$false){
     $items = Get-ChildItem $src -Recurse -File
     Write-Log ("Step2: Move to date folder. Total " + $items.Count + " files.")
     $items | ForEach-Object {
-        $dir = Join-Path $dest (GetDestFolderName($_.CreationTime));
+        $dir = Join-Path $dest (GetDestFolderName $_.CreationTime $DestFolderNameSuffix);
         If (!(Test-Path $dir)){ mkdir $dir };
         $destfilepath = Join-Path $dir $_.Name;
         
@@ -176,15 +178,16 @@ if ($src) {
     $src = $srcTmp
 
     # Copy file from tmp folder to dest1 and dest2
+    $datetime = Get-Date
     $dest = "$env:userprofile\Pictures\Back2Nas\FujiXS10\"
-    $destDate = Join-Path $dest (GetDestFolderName(Get-Date))
+    $destDate = Join-Path $dest (GetDestFolderName $datetime $DestFolderNameSuffix)
     If (!(Test-Path $destDate)){ Start-Process $dest }
     ELSE { Start-Process $destDate; }
     CopyOrMoveBasedOnDateV2 $src $dest $false
 
     $dest = "Y:\Photos\PhotoLibrary\FujiXS10\"
     CopyOrMoveBasedOnDateV2 $src $dest $true
-    Start-Process (Join-Path $dest (GetDestFolderName(Get-Date)))
+    Start-Process (Join-Path $dest (GetDestFolderName $datetime $DestFolderNameSuffix))
 } else {
     Write-Log "No usb drive with DCIM folder, please insert one."
 }
