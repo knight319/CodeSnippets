@@ -6,7 +6,9 @@ param (
   [string]$LogPath = "$env:userprofile\MoveDcim2NasV2.log",
   [ValidateSet('Month', 'Day')]
   [string]$DestMode = "Month",
-  [string]$DestFolderNameSuffix = ""
+  [string]$DestFolderNameSuffix = "",
+  [string]$DestFolder1="$env:userprofile\Pictures\Back2Nas\FujiXS10\",
+  [string]$DestFolder2="Y:\Photos\PhotoLibrary\FujiXS10\"
 )
 
 Function Write-Log($str) {
@@ -179,13 +181,13 @@ if ($src) {
 
     # Copy file from tmp folder to dest1 and dest2
     $datetime = Get-Date
-    $dest = "$env:userprofile\Pictures\Back2Nas\FujiXS10\"
+    $dest = $DestFolder1
     $destDate = Join-Path $dest (GetDestFolderName $datetime $DestFolderNameSuffix)
     If (!(Test-Path $destDate)){ Start-Process $dest }
     ELSE { Start-Process $destDate; }
     CopyOrMoveBasedOnDateV2 $src $dest $false
 
-    $dest = "Y:\Photos\PhotoLibrary\FujiXS10\"
+    $dest = $DestFolder2
     CopyOrMoveBasedOnDateV2 $src $dest $true
     Start-Process (Join-Path $dest (GetDestFolderName $datetime $DestFolderNameSuffix))
 } else {
